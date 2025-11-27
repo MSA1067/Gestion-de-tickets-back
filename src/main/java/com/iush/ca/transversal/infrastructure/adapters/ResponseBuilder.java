@@ -6,7 +6,9 @@ import com.iush.ca.transversal.domain.models.exception.InstanceException;
 import com.iush.ca.transversal.domain.models.responses.PaginationResponse;
 import com.iush.ca.transversal.domain.models.responses.ResponseList;
 import com.iush.ca.transversal.domain.models.responses.ResponseObject;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 
 import java.lang.reflect.Constructor;
@@ -31,9 +33,34 @@ public class ResponseBuilder {
         return new ResponseList<>(data, pagination);
     }
 
+    private static <T> ResponseEntity<T> buildResponseEntity(
+            T body,
+            HttpStatus status,
+            ResponseCookie... cookies
+    ) {
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(status);
+        if (cookies != null) {
+            for (ResponseCookie cookie : cookies) {
+                builder.header(HttpHeaders.SET_COOKIE, cookie.toString());
+            }
+        }
+        return builder.body(body);
+    }
+
     public static <T,E> ResponseEntity<ResponseObject<T>> buildResponse(E data, Class<T> clazz, Class<E> clazzData, HttpStatus status) {
         return ResponseEntity.status(status)
                 .body(buildObjectResponse(data, clazz, clazzData));
+    }
+
+    public static <T, E> ResponseEntity<ResponseObject<T>> buildResponse(
+            E data,
+            Class<T> clazz,
+            Class<E> clazzData,
+            HttpStatus status,
+            ResponseCookie... cookies
+    ) throws CAGenericException {
+        ResponseObject<T> body = buildObjectResponse(data, clazz, clazzData);
+        return buildResponseEntity(body, status, cookies);
     }
 
     public static <T> ResponseEntity<ResponseList<T>> buildResponse(List<T> data, PaginationResponse pagination) {
@@ -42,9 +69,27 @@ public class ResponseBuilder {
         );
     }
 
+    public static <T> ResponseEntity<ResponseList<T>> buildResponse(
+            List<T> data,
+            PaginationResponse pagination,
+            ResponseCookie... cookies
+    ) {
+        ResponseList<T> body = buildListResponse(data, pagination);
+        return buildResponseEntity(body, HttpStatus.OK, cookies);
+    }
+
     public static <T> ResponseEntity<ResponseObject<T>> buildBasicResponse(T data, HttpStatus status) {
         return ResponseEntity.status(status)
                 .body(new ResponseObject<>(data));
+    }
+
+    public static <T> ResponseEntity<ResponseObject<T>> buildBasicResponse(
+            T data,
+            HttpStatus status,
+            ResponseCookie... cookies
+    ) {
+        ResponseObject<T> body = new ResponseObject<>(data);
+        return buildResponseEntity(body, status, cookies);
     }
 
 

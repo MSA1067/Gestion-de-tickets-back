@@ -1,0 +1,33 @@
+package com.iush.ca.transversal.application;
+
+// CustomUserDetails.java
+import com.iush.ca.user.domain.models.entity.User;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
+
+public class CustomUserDetails implements UserDetails {
+
+    private final User user;
+
+    public CustomUserDetails(User user) { this.user = user; }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        String role = user.getRole();
+        if (role == null) return List.of();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+    }
+
+    @Override public String getPassword() { return user.getPassword(); }
+    @Override public String getUsername() { return user.getUsername(); }
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return !"N".equalsIgnoreCase(user.getActive()); }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return "S".equalsIgnoreCase(user.getActive()); }
+
+    public User getUser() { return user; }
+}

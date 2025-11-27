@@ -7,11 +7,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 public class PaginationUtils {
-    public static Pageable buildPageable(int page, int size,String sortField) {
+    public static Pageable buildPageable(int page, int size, String sortField) {
+        String[] parts = sortField.split(",");
+        String field = parts[0].trim();
+        Sort.Direction direction = (parts.length > 1 && parts[1].trim().equalsIgnoreCase("desc"))
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+
+        Sort sort = Sort.by(new Sort.Order(direction, field));
+
         return PageRequest.of(
                 Math.max(page - 1, 0),
                 size,
-                Sort.by(Sort.Order.asc(sortField)));
+                sort
+        );
     }
 
     public static <T> PaginationResponse buildPaginationResponse(Page<T> page, int currentPage, int size, String url) {
