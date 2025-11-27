@@ -11,6 +11,10 @@ import com.iush.ca.user.domain.models.entity.User;
 import com.iush.ca.user.domain.ports.in.UserService;
 import com.iush.ca.user.domain.ports.out.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +24,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final ErrorOperationHandler errorOperationHandler;
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
     @Override
@@ -29,6 +34,16 @@ public class UserServiceImpl implements UserService {
                 CADbException.class,
                 CAException.class,
                 "Find all users"
+        );
+    }
+
+    @Override
+    public Page<User> getUsersFilters(Pageable pageable, Specification<User> specification) throws CAGenericException {
+        return errorOperationHandler.handleDatabaseOperations(
+                () -> userRepository.findAll(specification, pageable),
+                CADbException.class,
+                CAException.class,
+                "Find all users with pagination"
         );
     }
 
@@ -48,7 +63,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User createUser(User user) throws CAGenericException {
         return errorOperationHandler.handleDatabaseOperations(
-                () -> userRepository.save(user),
+                () -> {
+                    user.setPassword(passwordEncoder.encode(user.getPassword()));
+                    return userRepository.save(user);
+                },
                 CADbException.class,
                 CAException.class,
                 "Create user"
